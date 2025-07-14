@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - TrackFit</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+        }
+        .workout-card {
+            transition: transform 0.2s;
+            border-radius: 10px;
+        }
+        .workout-card:hover {
+            transform: translateY(-2px);
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/dashboard">
+                <i class="fas fa-dumbbell me-2"></i>TrackFit
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/dashboard">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/workouts">
+                            <i class="fas fa-list me-1"></i>Workouts
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/workouts/add">
+                            <i class="fas fa-plus me-1"></i>Add Workout
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i><span th:text="${username}">User</span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/logout">
+                                <i class="fas fa-sign-out-alt me-1"></i>Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i><span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="display-6 fw-bold">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </h1>
+                <p class="lead text-muted">Welcome back, <span th:text="${username}">User</span>!</p>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row mb-4" th:if="${stats}">
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-dumbbell fa-2x mb-2"></i>
+                        <h3 class="card-title" th:text="${stats.totalWorkouts}">0</h3>
+                        <p class="card-text">Total Workouts</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-fire fa-2x mb-2"></i>
+                        <h3 class="card-title" th:text="${stats.totalCalories}">0</h3>
+                        <p class="card-text">Total Calories</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-clock fa-2x mb-2"></i>
+                        <h3 class="card-title" th:text="${stats.totalDuration}">0</h3>
+                        <p class="card-text">Total Minutes</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-calendar-week fa-2x mb-2"></i>
+                        <h3 class="card-title" th:text="${stats.thisWeekCount}">0</h3>
+                        <p class="card-text">This Week</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Recent Workouts -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-history me-2"></i>Recent Workouts
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${#lists.isEmpty(recentWorkouts)}" class="text-center text-muted py-4">
+                            <i class="fas fa-dumbbell fa-3x mb-3 opacity-50"></i>
+                            <p>No workouts yet. <a href="/workouts/add">Add your first workout!</a></p>
+                        </div>
+                        <div th:each="workout : ${recentWorkouts}" class="workout-card border rounded p-3 mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1" th:text="${workout.type}">Workout Type</h6>
+                                    <small class="text-muted" th:text="${workout.date}">Date</small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold text-primary" th:text="${workout.calories} + ' cal'">Calories</div>
+                                    <small class="text-muted" th:text="${workout.duration} + ' min'">Duration</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center mt-3" th:if="${!#lists.isEmpty(recentWorkouts)}">
+                            <a href="/workouts" class="btn btn-outline-primary">View All Workouts</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calories by Type Chart -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-pie me-2"></i>Calories by Workout Type
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${#maps.isEmpty(caloriesByType)}" class="text-center text-muted py-4">
+                            <i class="fas fa-chart-pie fa-3x mb-3 opacity-50"></i>
+                            <p>No data available yet.</p>
+                        </div>
+                        <div th:if="${!#maps.isEmpty(caloriesByType)}" class="chart-container">
+                            <canvas id="caloriesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:if="${!#maps.isEmpty(caloriesByType)}">
+        // Calories by Type Chart
+        const ctx = document.getElementById('caloriesChart').getContext('2d');
+        const caloriesData = /*[[${caloriesByType}]]*/ {};
+        
+        const labels = Object.keys(caloriesData);
+        const data = Object.values(caloriesData);
+        const colors = [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+            '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+        ];
+
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: colors.slice(0, labels.length),
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
